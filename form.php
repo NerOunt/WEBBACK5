@@ -112,7 +112,6 @@ try {
             <h3>Ваши данные для входа:</h3>
             <p><strong>Логин:</strong> <?= htmlspecialchars($generated_credentials['login']) ?></p>
             <p><strong>Пароль:</strong> <?= htmlspecialchars($generated_credentials['password']) ?></p>
-            <p style="color: red;">Сохраните эти данные!</p>
         </div>
     <?php endif; ?>
 
