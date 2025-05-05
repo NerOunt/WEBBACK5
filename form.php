@@ -1,5 +1,5 @@
 <?php
-session_start();
+// НЕ запускаем сессию здесь, она уже запущена в index.php
 header('Content-Type: text/html; charset=UTF-8');
 
 // Получаем данные из сессии
@@ -31,14 +31,12 @@ $languages_list = [
             line-height: 1.6;
             background-color: #f5f5f5;
         }
-        
         .form-container {
             background-color: white;
             padding: 25px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        
         .credentials-box {
             background: #e8f5e9;
             border: 1px solid #4caf50;
@@ -46,17 +44,14 @@ $languages_list = [
             margin-bottom: 20px;
             border-radius: 4px;
         }
-        
         .form-group {
             margin-bottom: 20px;
         }
-        
         label {
             display: block;
             margin-bottom: 8px;
             font-weight: bold;
         }
-        
         input[type="text"],
         input[type="tel"],
         input[type="email"],
@@ -70,22 +65,18 @@ $languages_list = [
             box-sizing: border-box;
             font-size: 16px;
         }
-        
         select[multiple] {
             height: 120px;
         }
-        
         .error {
             border-color: #f44336;
             background-color: #ffebee;
         }
-        
         .error-message {
             color: #f44336;
             font-size: 0.85em;
             margin-top: 5px;
         }
-        
         button {
             padding: 12px 24px;
             background-color: #2196F3;
@@ -95,29 +86,22 @@ $languages_list = [
             cursor: pointer;
             font-size: 16px;
         }
-        
         .warning {
             color: #f44336;
             font-weight: bold;
         }
-        
         .auth-info {
             padding: 10px;
             background: #e3f2fd;
             margin-bottom: 15px;
             border-radius: 4px;
         }
-        
         .radio-group {
             display: flex;
             gap: 15px;
         }
-        
         .radio-group label {
             font-weight: normal;
-            display: flex;
-            align-items: center;
-            gap: 5px;
         }
     </style>
 </head>
@@ -150,7 +134,6 @@ $languages_list = [
         <?php endif; ?>
 
         <form method="POST" action="index.php">
-            <!-- ФИО -->
             <div class="form-group">
                 <label for="full_name">ФИО*</label>
                 <input type="text" id="full_name" name="full_name" 
@@ -162,7 +145,6 @@ $languages_list = [
                 <?php endif; ?>
             </div>
 
-            <!-- Телефон -->
             <div class="form-group">
                 <label for="phone">Телефон*</label>
                 <input type="tel" id="phone" name="phone" 
@@ -174,7 +156,6 @@ $languages_list = [
                 <?php endif; ?>
             </div>
 
-            <!-- Email -->
             <div class="form-group">
                 <label for="email">Email*</label>
                 <input type="email" id="email" name="email" 
@@ -186,7 +167,6 @@ $languages_list = [
                 <?php endif; ?>
             </div>
 
-            <!-- Дата рождения -->
             <div class="form-group">
                 <label for="birth_date">Дата рождения*</label>
                 <input type="date" id="birth_date" name="birth_date" 
@@ -198,7 +178,6 @@ $languages_list = [
                 <?php endif; ?>
             </div>
 
-            <!-- Пол -->
             <div class="form-group">
                 <label>Пол*</label>
                 <div class="radio-group">
@@ -223,7 +202,6 @@ $languages_list = [
                 <?php endif; ?>
             </div>
 
-            <!-- Языки программирования -->
             <div class="form-group">
                 <label for="languages">Любимые языки программирования*</label>
                 <select id="languages" name="languages[]" multiple 
@@ -241,13 +219,11 @@ $languages_list = [
                 <?php endif; ?>
             </div>
 
-            <!-- Биография -->
             <div class="form-group">
                 <label for="biography">Биография</label>
                 <textarea id="biography" name="biography" rows="4"><?= htmlspecialchars($values['biography'] ?? '') ?></textarea>
             </div>
 
-            <!-- Согласие с контрактом -->
             <div class="form-group">
                 <label>
                     <input type="checkbox" name="contract_agreed" 
@@ -261,7 +237,6 @@ $languages_list = [
                 <?php endif; ?>
             </div>
             
-            <!-- Кнопка отправки -->
             <div class="form-group">
                 <button type="submit">Отправить</button>
             </div>
