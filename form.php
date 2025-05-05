@@ -242,12 +242,6 @@
                                class="<?= $errors['gender'] ? 'error' : '' ?>">
                         <label for="female">Женский</label>
                     </div>
-                    <div class="radio-option">
-                        <input type="radio" id="other" name="gender" value="other" 
-                               <?= $values['gender'] === 'other' ? 'checked' : '' ?>
-                               class="<?= $errors['gender'] ? 'error' : '' ?>">
-                        <label for="other">Другой</label>
-                    </div>
                 </div>
                 <?php if ($errors['gender']): ?>
                 <div class="error-message">Укажите пол</div>
