@@ -29,23 +29,30 @@ $errors = [
     'contract_agreed' => false
 ];
 
-// Проверяем соединение с БД
-try {
-    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ATTR_ERRMODE_EXCEPTION);
-    
-    // Проверяем существование таблиц
-    $tables = ['users', 'applications', 'programming_languages', 'application_languages'];
-    foreach ($tables as $table) {
-        $stmt = $pdo->query("SELECT 1 FROM $table LIMIT 1");
-        if (!$stmt) {
-            throw new PDOException("Таблица $table не существует");
+// Проверяем доступность PDO
+if (!extension_loaded('pdo')) {
+    $messages[] = '<div class="error">Требуется расширение PDO. Обратитесь к администратору сервера.</div>';
+} else {
+    // Пытаемся подключиться к базе данных
+    try {
+        $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
+        
+        // Устанавливаем режим ошибок (используем числовые значения констант)
+        $pdo->setAttribute(2, 1); // PDO::ATTR_ERRMODE = 2, PDO::ERRMODE_EXCEPTION = 1
+        
+        // Проверяем существование таблиц
+        $required_tables = ['users', 'applications', 'programming_languages', 'application_languages'];
+        foreach ($required_tables as $table) {
+            $stmt = $pdo->query("SELECT 1 FROM $table LIMIT 1");
+            if ($stmt === false) {
+                throw new Exception("Таблица $table не существует или недоступна");
+            }
         }
+        
+    } catch (Exception $e) {
+        error_log("Database error: " . $e->getMessage());
+        $messages[] = '<div class="error">Ошибка подключения к базе данных. Пожалуйста, попробуйте позже.</div>';
     }
-    
-} catch (PDOException $e) {
-    error_log("Database error: " . $e->getMessage());
-    $messages[] = '<div class="error">Ошибка базы данных. Пожалуйста, попробуйте позже.</div>';
 }
 
 // Загрузка данных из кук
@@ -77,13 +84,14 @@ if (isset($_COOKIE['contract_agreed_value'])) {
             padding: 20px;
             line-height: 1.6;
             color: #333;
+            background-color: #f5f5f5;
         }
         
         .form-container {
-            background-color: #f9f9f9;
-            padding: 20px;
+            background-color: #fff;
+            padding: 25px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
         .form-group {
@@ -101,6 +109,7 @@ if (isset($_COOKIE['contract_agreed_value'])) {
         input[type="tel"],
         input[type="email"],
         input[type="date"],
+        input[type="password"],
         select,
         textarea {
             width: 100%;
@@ -109,6 +118,14 @@ if (isset($_COOKIE['contract_agreed_value'])) {
             border-radius: 4px;
             box-sizing: border-box;
             font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #2196F3;
+            outline: none;
         }
         
         textarea {
@@ -122,22 +139,22 @@ if (isset($_COOKIE['contract_agreed_value'])) {
         }
         
         .error {
-            border-color: #e74c3c;
-            background-color: #fdecea;
+            border-color: #f44336 !important;
+            background-color: #ffebee;
         }
         
         .error-message {
-            color: #e74c3c;
+            color: #f44336;
             font-size: 0.85em;
             margin-top: 5px;
         }
         
         .success {
-            color: #27ae60;
+            color: #4CAF50;
             margin-bottom: 20px;
             padding: 12px;
-            background: #e8f5e9;
-            border: 1px solid #27ae60;
+            background: #E8F5E9;
+            border: 1px solid #4CAF50;
             border-radius: 4px;
         }
         
@@ -169,7 +186,7 @@ if (isset($_COOKIE['contract_agreed_value'])) {
         
         button {
             padding: 12px 24px;
-            background-color: #2196f3;
+            background-color: #2196F3;
             color: white;
             border: none;
             border-radius: 4px;
@@ -179,24 +196,43 @@ if (isset($_COOKIE['contract_agreed_value'])) {
         }
         
         button:hover {
-            background-color: #0d47a1;
+            background-color: #0d8bf2;
         }
         
         .auth-info {
             margin-bottom: 20px;
             padding: 12px;
-            background: #e3f2fd;
+            background: #E3F2FD;
             border-radius: 4px;
-            border-left: 4px solid #2196f3;
+            border-left: 4px solid #2196F3;
         }
         
         .auth-info a {
             color: #0d47a1;
             text-decoration: none;
+            font-weight: bold;
         }
         
         .auth-info a:hover {
             text-decoration: underline;
+        }
+        
+        .credentials-message {
+            margin: 20px 0;
+            padding: 15px;
+            background: #E3F2FD;
+            border: 1px solid #2196F3;
+            border-radius: 4px;
+        }
+        
+        .credentials-message h3 {
+            margin-top: 0;
+            color: #0d47a1;
+        }
+        
+        .warning {
+            color: #f44336;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -224,7 +260,8 @@ if (isset($_COOKIE['contract_agreed_value'])) {
                 <label for="full_name">ФИО*</label>
                 <input type="text" id="full_name" name="full_name" 
                        class="<?= $errors['full_name'] ? 'error' : '' ?>" 
-                       value="<?= htmlspecialchars($values['full_name']) ?>">
+                       value="<?= htmlspecialchars($values['full_name']) ?>"
+                       required>
                 <?php if ($errors['full_name']): ?>
                 <div class="error-message">Допустимы только буквы, пробелы и дефисы (2-150 символов)</div>
                 <?php endif; ?>
@@ -234,7 +271,8 @@ if (isset($_COOKIE['contract_agreed_value'])) {
                 <label for="phone">Телефон*</label>
                 <input type="tel" id="phone" name="phone" 
                        class="<?= $errors['phone'] ? 'error' : '' ?>" 
-                       value="<?= htmlspecialchars($values['phone']) ?>">
+                       value="<?= htmlspecialchars($values['phone']) ?>"
+                       required>
                 <?php if ($errors['phone']): ?>
                 <div class="error-message">Введите 10-15 цифр, можно с + в начале</div>
                 <?php endif; ?>
@@ -244,7 +282,8 @@ if (isset($_COOKIE['contract_agreed_value'])) {
                 <label for="email">Email*</label>
                 <input type="email" id="email" name="email" 
                        class="<?= $errors['email'] ? 'error' : '' ?>" 
-                       value="<?= htmlspecialchars($values['email']) ?>">
+                       value="<?= htmlspecialchars($values['email']) ?>"
+                       required>
                 <?php if ($errors['email']): ?>
                 <div class="error-message">Введите корректный email</div>
                 <?php endif; ?>
@@ -254,7 +293,8 @@ if (isset($_COOKIE['contract_agreed_value'])) {
                 <label for="birth_date">Дата рождения*</label>
                 <input type="date" id="birth_date" name="birth_date" 
                        class="<?= $errors['birth_date'] ? 'error' : '' ?>" 
-                       value="<?= htmlspecialchars($values['birth_date']) ?>">
+                       value="<?= htmlspecialchars($values['birth_date']) ?>"
+                       required>
                 <?php if ($errors['birth_date']): ?>
                 <div class="error-message">Дата должна быть в прошлом</div>
                 <?php endif; ?>
@@ -266,19 +306,22 @@ if (isset($_COOKIE['contract_agreed_value'])) {
                     <div class="radio-option">
                         <input type="radio" id="male" name="gender" value="male" 
                                <?= $values['gender'] === 'male' ? 'checked' : '' ?>
-                               class="<?= $errors['gender'] ? 'error' : '' ?>">
+                               class="<?= $errors['gender'] ? 'error' : '' ?>"
+                               required>
                         <label for="male">Мужской</label>
                     </div>
                     <div class="radio-option">
                         <input type="radio" id="female" name="gender" value="female" 
                                <?= $values['gender'] === 'female' ? 'checked' : '' ?>
-                               class="<?= $errors['gender'] ? 'error' : '' ?>">
+                               class="<?= $errors['gender'] ? 'error' : '' ?>"
+                               required>
                         <label for="female">Женский</label>
                     </div>
                     <div class="radio-option">
                         <input type="radio" id="other" name="gender" value="other" 
                                <?= $values['gender'] === 'other' ? 'checked' : '' ?>
-                               class="<?= $errors['gender'] ? 'error' : '' ?>">
+                               class="<?= $errors['gender'] ? 'error' : '' ?>"
+                               required>
                         <label for="other">Другой</label>
                     </div>
                 </div>
@@ -290,15 +333,16 @@ if (isset($_COOKIE['contract_agreed_value'])) {
             <div class="form-group">
                 <label for="languages">Любимые языки программирования*</label>
                 <select id="languages" name="languages[]" multiple 
-                        class="<?= $errors['languages'] ? 'error' : '' ?>">
+                        class="<?= $errors['languages'] ? 'error' : '' ?>"
+                        required>
                     <?php
-                    try {
-                        if (isset($pdo)) {
+                    if (isset($pdo)) {
+                        try {
                             $stmt = $pdo->query("SELECT id, name FROM programming_languages");
                             $languages = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             
                             if (empty($languages)) {
-                                throw new PDOException("Таблица языков пуста");
+                                throw new Exception("Таблица языков пуста");
                             }
                             
                             foreach ($languages as $lang): ?>
@@ -307,12 +351,23 @@ if (isset($_COOKIE['contract_agreed_value'])) {
                                     <?= htmlspecialchars($lang['name']) ?>
                                 </option>
                             <?php endforeach;
-                        } else {
-                            throw new PDOException("Нет соединения с БД");
+                        } catch (Exception $e) {
+                            error_log("Languages error: " . $e->getMessage());
+                            // Fallback варианты
+                            $fallback = [
+                                1 => 'Pascal', 2 => 'C', 3 => 'C++', 4 => 'JavaScript',
+                                5 => 'PHP', 6 => 'Python', 7 => 'Java', 8 => 'Haskell',
+                                9 => 'Clojure', 10 => 'Prolog', 11 => 'Scala', 12 => 'Go'
+                            ];
+                            foreach ($fallback as $id => $name): ?>
+                                <option value="<?= $id ?>"
+                                    <?= in_array($id, $values['languages']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($name) ?>
+                                </option>
+                            <?php endforeach;
                         }
-                    } catch (PDOException $e) {
-                        error_log("Languages load error: " . $e->getMessage());
-                        // Fallback варианты
+                    } else {
+                        // Если PDO не доступен, используем fallback
                         $fallback = [
                             1 => 'Pascal', 2 => 'C', 3 => 'C++', 4 => 'JavaScript',
                             5 => 'PHP', 6 => 'Python', 7 => 'Java', 8 => 'Haskell',
@@ -341,7 +396,8 @@ if (isset($_COOKIE['contract_agreed_value'])) {
                 <div class="checkbox-container">
                     <input type="checkbox" id="contract_agreed" name="contract_agreed" value="1"
                            <?= $values['contract_agreed'] ? 'checked' : '' ?>
-                           class="<?= $errors['contract_agreed'] ? 'error' : '' ?>">
+                           class="<?= $errors['contract_agreed'] ? 'error' : '' ?>"
+                           required>
                     <label for="contract_agreed">С контрактом ознакомлен(а)*</label>
                 </div>
                 <?php if ($errors['contract_agreed']): ?>
