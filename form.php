@@ -123,18 +123,23 @@ try {
             <?php endif; ?>
         </div>
 
-       <div class="form-group">
+      <div class="form-group">
     <label>Пол*</label>
-    <div>
-        <input type="radio" id="gender_male" name="gender" value="male" 
-            <?= ($values['gender'] ?? '') === 'male' ? 'checked' : '' ?> required>
-        <label for="gender_male">Мужской</label>
+    <div class="radio-group">
+        <div class="radio-option">
+            <input type="radio" id="gender_male" name="gender" value="male" 
+                <?= ($values['gender'] ?? '') === 'male' ? 'checked' : '' ?> required>
+            <label for="gender_male">Мужской</label>
+        </div>
+        <div class="radio-option">
+            <input type="radio" id="gender_female" name="gender" value="female"
+                <?= ($values['gender'] ?? '') === 'female' ? 'checked' : '' ?>>
+            <label for="gender_female">Женский</label>
+        </div>
     </div>
-    <div>
-        <input type="radio" id="gender_female" name="gender" value="female"
-            <?= ($values['gender'] ?? '') === 'female' ? 'checked' : '' ?>>
-        <label for="gender_female">Женский</label>
-    </div>
+    <?php if (!empty($errors['gender'])): ?>
+        <div class="error-message">Выберите пол</div>
+    <?php endif; ?>
 </div>
             <?php if (!empty($errors['gender'])): ?>
                 <div class="error-message">Выберите пол</div>
@@ -162,11 +167,11 @@ try {
             <textarea id="biography" name="biography"><?= htmlspecialchars($values['biography'] ?? '') ?></textarea>
         </div>
 
-       div class="form-group">
-    <div>
+      <div class="form-group">
+    <div class="checkbox-wrapper">
         <input type="checkbox" id="contract_agreed" name="contract_agreed"
             <?= ($values['contract_agreed'] ?? false) ? 'checked' : '' ?> required>
-        <label for="contract_agreed">С контрактом ознакомлен(а)*</label>
+        <label for="contract_agreed">Согласен с условиями*</label>
     </div>
     <?php if (!empty($errors['contract_agreed'])): ?>
         <div class="error-message">Необходимо согласие</div>
