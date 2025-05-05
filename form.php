@@ -1,5 +1,5 @@
 <?php
-// Сессия уже запущена в index.php
+
 header('Content-Type: text/html; charset=UTF-8');
 
 $values = $_SESSION['form_data'] ?? [];
@@ -7,7 +7,7 @@ $errors = $_SESSION['errors'] ?? [];
 $generated_credentials = $_SESSION['generated_credentials'] ?? null;
 $login = $_SESSION['login'] ?? null;
 
-// Получаем список языков из БД
+
 try {
     $db_host = 'localhost';
     $db_name = 'u68895';
@@ -123,16 +123,19 @@ try {
             <?php endif; ?>
         </div>
 
-        <div class="form-group">
-            <label>Пол*</label>
-            <div>
-                <label><input type="radio" name="gender" value="male" 
-                    <?= ($values['gender'] ?? '') === 'male' ? 'checked' : '' ?> required> Мужской</label>
-                <label><input type="radio" name="gender" value="female"
-                    <?= ($values['gender'] ?? '') === 'female' ? 'checked' : '' ?>> Женский</label>
-                <label><input type="radio" name="gender" value="other"
-                    <?= ($values['gender'] ?? '') === 'other' ? 'checked' : '' ?>> Другой</label>
-            </div>
+       <div class="form-group">
+    <label>Пол*</label>
+    <div>
+        <input type="radio" id="gender_male" name="gender" value="male" 
+            <?= ($values['gender'] ?? '') === 'male' ? 'checked' : '' ?> required>
+        <label for="gender_male">Мужской</label>
+    </div>
+    <div>
+        <input type="radio" id="gender_female" name="gender" value="female"
+            <?= ($values['gender'] ?? '') === 'female' ? 'checked' : '' ?>>
+        <label for="gender_female">Женский</label>
+    </div>
+</div>
             <?php if (!empty($errors['gender'])): ?>
                 <div class="error-message">Выберите пол</div>
             <?php endif; ?>
@@ -159,22 +162,22 @@ try {
             <textarea id="biography" name="biography"><?= htmlspecialchars($values['biography'] ?? '') ?></textarea>
         </div>
 
-        <div class="form-group">
-            <label>
-                <input type="checkbox" name="contract_agreed"
-                    <?= ($values['contract_agreed'] ?? false) ? 'checked' : '' ?> required>
-                Согласен с условиями*
-            </label>
-            <?php if (!empty($errors['contract_agreed'])): ?>
-                <div class="error-message">Необходимо согласие</div>
-            <?php endif; ?>
-        </div>
+       div class="form-group">
+    <div>
+        <input type="checkbox" id="contract_agreed" name="contract_agreed"
+            <?= ($values['contract_agreed'] ?? false) ? 'checked' : '' ?> required>
+        <label for="contract_agreed">С контрактом ознакомлен(а)*</label>
+    </div>
+    <?php if (!empty($errors['contract_agreed'])): ?>
+        <div class="error-message">Необходимо согласие</div>
+    <?php endif; ?>
+</div>
 
         <button type="submit">Отправить</button>
     </form>
 </body>
 </html>
 <?php
-// Очищаем данные после отображения
+
 unset($_SESSION['errors'], $_SESSION['generated_credentials']);
 ?>
