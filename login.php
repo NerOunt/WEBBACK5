@@ -3,6 +3,7 @@ session_start();
 
 // Выход из системы
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
+    session_unset();
     session_destroy();
     header('Location: index.php');
     exit();
@@ -16,12 +17,18 @@ if (!empty($_SESSION['login'])) {
 
 // Обработка формы входа
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $login = $_POST['login'] ?? '';
-    $password = $_POST['password'] ?? '';
+    $login = trim($_POST['login'] ?? '');
+    $password = trim($_POST['password'] ?? '');
     
-    // Простая проверка (в реальной системе нужно проверять в БД)
-    if ($login === 'admin' && $password === '12345') {
+    // Проверка учетных данных (в реальной системе нужно проверять в БД)
+    $valid_logins = [
+        'admin' => '12345',
+        'user' => 'password'
+    ];
+    
+    if (isset($valid_logins[$login]) && $valid_logins[$login] === $password) {
         $_SESSION['login'] = $login;
+        $_SESSION['last_activity'] = time();
         header('Location: index.php');
         exit();
     } else {
@@ -30,6 +37,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 }
+
+// Установка заголовков
+header('Content-Type: text/html; charset=UTF-8');
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -38,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход в систему</title>
     <style>
+        /* Стили остаются без изменений */
         body {
             font-family: Arial, sans-serif;
             max-width: 400px;
