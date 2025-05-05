@@ -1,8 +1,12 @@
 <?php
-// Старт сессии только если она еще не активна
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+$db_host = 'localhost';
+$db_name = 'u68895';
+$db_user = 'u68895';
+$db_pass = '1562324';
 
 // Выход из системы
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
@@ -12,7 +16,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     exit();
 }
 
-// Перенаправление если уже авторизован
+// Если уже авторизован
 if (!empty($_SESSION['login'])) {
     header('Location: index.php');
     exit();
@@ -23,14 +27,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $login = trim($_POST['login'] ?? '');
     $password = trim($_POST['password'] ?? '');
     
-    // В реальной системе здесь должна быть проверка в БД
-    if ($login === 'admin' && $password === '12345') {
-        $_SESSION['login'] = $login;
-        $_SESSION['last_activity'] = time();
-        header('Location: index.php');
-        exit();
-    } else {
-        $_SESSION['error_message'] = 'Неверный логин или пароль';
+    try {
+        $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE login = ?");
+        $stmt->execute([$login]);
+        $user = $stmt->fetch();
+        
+        if ($user && password_verify($password, $user['password'])) {
+            $_SESSION['login'] = $user['login'];
+            $_SESSION['user_id'] = $user['id'];
+            header('Location: index.php');
+            exit();
+        } else {
+            $_SESSION['error_message'] = 'Неверный логин или пароль';
+            header('Location: login.php');
+            exit();
+        }
+    } catch (PDOException $e) {
+        $_SESSION['error_message'] = 'Ошибка системы';
         header('Location: login.php');
         exit();
     }
@@ -50,77 +66,61 @@ header('Content-Type: text/html; charset=UTF-8');
             max-width: 400px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
         }
-        .login-container {
-            background-color: white;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        .login-form {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         label {
             display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
+            margin-bottom: 5px;
         }
-        input[type="text"],
-        input[type="password"] {
+        input {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 8px;
             box-sizing: border-box;
         }
         button {
-            padding: 10px 15px;
-            background-color: #2196F3;
+            background: #4CAF50;
             color: white;
             border: none;
-            border-radius: 4px;
-            cursor: pointer;
+            padding: 10px;
             width: 100%;
+            cursor: pointer;
         }
-        .error-message {
-            color: #f44336;
+        .error {
+            color: red;
             margin-bottom: 15px;
-        }
-        .register-link {
-            margin-top: 15px;
-            text-align: center;
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <h1>Вход в систему</h1>
+    <div class="login-form">
+        <h2>Вход в систему</h2>
         
         <?php if (!empty($_SESSION['error_message'])): ?>
-            <div class="error-message">
-                <?= htmlspecialchars($_SESSION['error_message']) ?>
-            </div>
+            <div class="error"><?= htmlspecialchars($_SESSION['error_message']) ?></div>
             <?php unset($_SESSION['error_message']); ?>
         <?php endif; ?>
         
         <form method="POST">
             <div class="form-group">
-                <label for="login">Логин</label>
-                <input type="text" id="login" name="login" required>
+                <label>Логин:</label>
+                <input type="text" name="login" required>
             </div>
             
             <div class="form-group">
-                <label for="password">Пароль</label>
-                <input type="password" id="password" name="password" required>
+                <label>Пароль:</label>
+                <input type="password" name="password" required>
             </div>
             
             <button type="submit">Войти</button>
         </form>
-        
-        <div class="register-link">
-            <p>Ещё нет аккаунта? <a href="index.php">Зарегистрируйтесь</a></p>
-        </div>
     </div>
 </body>
 </html>
