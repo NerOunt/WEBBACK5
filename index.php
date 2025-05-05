@@ -13,22 +13,20 @@ $db_pass = '1562324';
 // Инициализация переменных
 $messages = [];
 $errors = [
-    'full_name' => false,
-    'phone' => false,
-    'email' => false,
-    'birth_date' => false,
-    'gender' => false,
-    'languages' => false,
-    'contract_agreed' => false
+    'full_name' => '',
+    'phone' => '',
+    'email' => '',
+    'birth_date' => '',
+    'gender' => '',
+    'languages' => '',
+    'contract_agreed' => ''
 ];
 
 // Обработка GET запроса
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    // Если есть данные в сессии - используем их
     if (!empty($_SESSION['form_data'])) {
         $values = $_SESSION['form_data'];
     } else {
-        // Иначе пробуем загрузить из кук
         $values = [
             'full_name' => $_COOKIE['full_name_value'] ?? '',
             'phone' => $_COOKIE['phone_value'] ?? '',
@@ -47,30 +45,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
 // Обработка POST запроса
 $values = $_POST;
-$_SESSION['form_data'] = $values; // Сохраняем данные в сессии
+$_SESSION['form_data'] = $values;
 
 // Валидация данных
 $validation_failed = false;
 
-// Валидация ФИО
 if (empty($values['full_name']) || !preg_match('/^[а-яА-ЯёЁa-zA-Z\s\-]{2,150}$/u', $values['full_name'])) {
-    $errors['full_name'] = 'Введите корректное ФИО (только буквы, пробелы и дефисы)';
+    $errors['full_name'] = 'Введите корректное ФИО';
     $validation_failed = true;
 }
 
-// Валидация телефона
 if (empty($values['phone']) || !preg_match('/^\+?\d{10,15}$/', $values['phone'])) {
-    $errors['phone'] = 'Введите корректный телефон (10-15 цифр, можно с + в начале)';
+    $errors['phone'] = 'Введите корректный телефон';
     $validation_failed = true;
 }
 
-// Валидация email
 if (empty($values['email']) || !filter_var($values['email'], FILTER_VALIDATE_EMAIL)) {
     $errors['email'] = 'Введите корректный email';
     $validation_failed = true;
 }
 
-// Валидация даты рождения
 $today = new DateTime();
 $birthdate = DateTime::createFromFormat('Y-m-d', $values['birth_date']);
 if (empty($values['birth_date']) || !$birthdate || $birthdate > $today) {
@@ -78,19 +72,16 @@ if (empty($values['birth_date']) || !$birthdate || $birthdate > $today) {
     $validation_failed = true;
 }
 
-// Валидация пола
 if (empty($values['gender']) || !in_array($values['gender'], ['male', 'female', 'other'])) {
     $errors['gender'] = 'Выберите пол';
     $validation_failed = true;
 }
 
-// Валидация языков
 if (empty($values['languages'])) {
     $errors['languages'] = 'Выберите хотя бы один язык';
     $validation_failed = true;
 }
 
-// Валидация согласия с контрактом
 if (empty($values['contract_agreed'])) {
     $errors['contract_agreed'] = 'Необходимо согласие с контрактом';
     $validation_failed = true;
@@ -102,12 +93,13 @@ if ($validation_failed) {
     exit();
 }
 
+// Подключение к БД с обработкой ошибок
 try {
-    // Подключение к БД
     $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ATTR_ERRMODE_EXCEPTION);
+    
+    // Установка режима ошибок (совместимый способ)
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, constant('PDO::ERRMODE_EXCEPTION'));
 
-    // Сохраняем анкету
     $stmt = $pdo->prepare("INSERT INTO applications (full_name, phone, email, birth_date, gender, biography, contract_agreed) 
                           VALUES (?, ?, ?, ?, ?, ?, ?)");
     $stmt->execute([
@@ -122,19 +114,17 @@ try {
     
     $app_id = $pdo->lastInsertId();
     
-    // Сохраняем языки программирования
     $stmt = $pdo->prepare("INSERT INTO application_languages (application_id, language_id) VALUES (?, ?)");
     foreach ($values['languages'] as $lang_id) {
         $stmt->execute([$app_id, (int)$lang_id]);
     }
     
-    // Генерируем учетные данные
     $_SESSION['generated_credentials'] = [
         'login' => 'user_' . substr(md5(time()), 0, 8),
         'password' => substr(md5(uniqid()), 0, 8)
     ];
     
-    // Очищаем куки и данные формы
+    // Очистка данных
     foreach ($values as $key => $value) {
         setcookie($key.'_value', '', time() - 3600, '/');
     }
@@ -148,7 +138,9 @@ try {
     exit();
     
 } catch (PDOException $e) {
-    $_SESSION['error_message'] = "Ошибка базы данных: " . $e->getMessage();
+    $_SESSION['error_message'] = "Ошибка базы данных. Пожалуйста, попробуйте позже.";
+    error_log("DB Error: " . $e->getMessage());
     header("Location: index.php");
     exit();
 }
+?>
