@@ -64,6 +64,40 @@ try {
             margin-bottom: 20px;
             border-radius: 5px;
         }
+        .form-group {
+    margin-bottom: 20px;
+}
+
+.input-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.input-group {
+    margin-top: 5px;
+}
+
+.input-option {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.input-option input[type="radio"],
+.input-option input[type="checkbox"] {
+    width: auto;
+    margin: 0 10px 0 0;
+    transform: scale(1.2);
+}
+
+.option-label {
+    font-weight: normal;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 0;
+}
+       
     </style>
 </head>
 <body>
@@ -123,29 +157,24 @@ try {
             <?php endif; ?>
         </div>
 
-      <div class="form-group">
-    <label>Пол*</label>
-    <div class="radio-group">
-        <div class="radio-option">
-            <input type="radio" id="gender_male" name="gender" value="male" 
+     <div class="form-group">
+    <label class="input-label">Пол*</label>
+    <div class="input-group">
+        <div class="input-option">
+            <input type="radio" id="gender_male" name="gender" value="male"
                 <?= ($values['gender'] ?? '') === 'male' ? 'checked' : '' ?> required>
-            <label for="gender_male">Мужской</label>
+            <label for="gender_male" class="option-label">Мужской</label>
         </div>
-        <div class="radio-option">
+        <div class="input-option">
             <input type="radio" id="gender_female" name="gender" value="female"
                 <?= ($values['gender'] ?? '') === 'female' ? 'checked' : '' ?>>
-            <label for="gender_female">Женский</label>
+            <label for="gender_female" class="option-label">Женский</label>
         </div>
     </div>
     <?php if (!empty($errors['gender'])): ?>
         <div class="error-message">Выберите пол</div>
     <?php endif; ?>
 </div>
-            <?php if (!empty($errors['gender'])): ?>
-                <div class="error-message">Выберите пол</div>
-            <?php endif; ?>
-        </div>
-
         <div class="form-group">
             <label for="languages">Языки программирования*</label>
             <select id="languages" name="languages[]" multiple 
@@ -166,12 +195,13 @@ try {
             <label for="biography">Биография</label>
             <textarea id="biography" name="biography"><?= htmlspecialchars($values['biography'] ?? '') ?></textarea>
         </div>
-
-      <div class="form-group">
-    <div class="checkbox-wrapper">
-        <input type="checkbox" id="contract_agreed" name="contract_agreed"
-            <?= ($values['contract_agreed'] ?? false) ? 'checked' : '' ?> required>
-        <label for="contract_agreed">Согласен с условиями*</label>
+<div class="form-group">
+    <div class="input-group">
+        <div class="input-option">
+            <input type="checkbox" id="contract_agreed" name="contract_agreed"
+                <?= ($values['contract_agreed'] ?? false) ? 'checked' : '' ?> required>
+            <label for="contract_agreed" class="option-label">С контрактом ознакомлпен*</label>
+        </div>
     </div>
     <?php if (!empty($errors['contract_agreed'])): ?>
         <div class="error-message">Необходимо согласие</div>
