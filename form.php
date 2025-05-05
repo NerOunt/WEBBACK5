@@ -1,3 +1,68 @@
+<?php
+header('Content-Type: text/html; charset=UTF-8');
+
+// Инициализация переменных
+$db_host = 'localhost';
+$db_name = 'u68895';
+$db_user = 'u68895';
+$db_pass = '1562324';
+
+$messages = [];
+$values = [
+    'full_name' => '',
+    'phone' => '',
+    'email' => '',
+    'birth_date' => '',
+    'gender' => '',
+    'biography' => '',
+    'contract_agreed' => false,
+    'languages' => []
+];
+
+$errors = [
+    'full_name' => false,
+    'phone' => false,
+    'email' => false,
+    'birth_date' => false,
+    'gender' => false,
+    'languages' => false,
+    'contract_agreed' => false
+];
+
+// Проверяем соединение с БД
+try {
+    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ATTR_ERRMODE_EXCEPTION);
+    
+    // Проверяем существование таблиц
+    $tables = ['users', 'applications', 'programming_languages', 'application_languages'];
+    foreach ($tables as $table) {
+        $stmt = $pdo->query("SELECT 1 FROM $table LIMIT 1");
+        if (!$stmt) {
+            throw new PDOException("Таблица $table не существует");
+        }
+    }
+    
+} catch (PDOException $e) {
+    error_log("Database error: " . $e->getMessage());
+    $messages[] = '<div class="error">Ошибка базы данных. Пожалуйста, попробуйте позже.</div>';
+}
+
+// Загрузка данных из кук
+foreach ($values as $key => &$value) {
+    if (isset($_COOKIE[$key.'_value'])) {
+        $value = $_COOKIE[$key.'_value'];
+    }
+}
+
+if (isset($_COOKIE['languages_value'])) {
+    $values['languages'] = explode(',', $_COOKIE['languages_value']);
+}
+
+if (isset($_COOKIE['contract_agreed_value'])) {
+    $values['contract_agreed'] = (bool)$_COOKIE['contract_agreed_value'];
+}
+?>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -36,7 +101,6 @@
         input[type="tel"],
         input[type="email"],
         input[type="date"],
-        input[type="password"],
         select,
         textarea {
             width: 100%;
@@ -77,24 +141,6 @@
             border-radius: 4px;
         }
         
-        .credentials-message {
-            margin: 20px 0;
-            padding: 15px;
-            background: #e3f2fd;
-            border: 1px solid #2196f3;
-            border-radius: 4px;
-        }
-        
-        .credentials-message h3 {
-            margin-top: 0;
-            color: #0d47a1;
-        }
-        
-        .credentials-message .warning {
-            color: #d32f2f;
-            font-weight: bold;
-        }
-        
         .radio-group {
             display: flex;
             gap: 20px;
@@ -121,9 +167,19 @@
             margin: 0;
         }
         
-        .checkbox-container label {
-            margin-bottom: 0;
-            font-weight: normal;
+        button {
+            padding: 12px 24px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #0d47a1;
         }
         
         .auth-info {
@@ -141,29 +197,6 @@
         
         .auth-info a:hover {
             text-decoration: underline;
-        }
-        
-        button {
-            padding: 12px 24px;
-            background-color: #2196f3;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-        
-        button:hover {
-            background-color: #0d47a1;
-        }
-        
-        option {
-            padding: 8px;
-        }
-        
-        option:hover {
-            background-color: #e3f2fd;
         }
     </style>
 </head>
@@ -242,56 +275,57 @@
                                class="<?= $errors['gender'] ? 'error' : '' ?>">
                         <label for="female">Женский</label>
                     </div>
+                    <div class="radio-option">
+                        <input type="radio" id="other" name="gender" value="other" 
+                               <?= $values['gender'] === 'other' ? 'checked' : '' ?>
+                               class="<?= $errors['gender'] ? 'error' : '' ?>">
+                        <label for="other">Другой</label>
+                    </div>
                 </div>
                 <?php if ($errors['gender']): ?>
                 <div class="error-message">Укажите пол</div>
                 <?php endif; ?>
             </div>
 
-           <div class="form-group">
-    <label for="languages">Любимые языки программирования*</label>
-    <select id="languages" name="languages[]" multiple 
-            class="<?= $errors['languages'] ? 'error' : '' ?>">
-        <?php
-        try {
-            $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $stmt = $pdo->query("SELECT id, name FROM programming_languages");
-            $languages = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            foreach ($languages as $lang): ?>
-                <option value="<?= $lang['id'] ?>" 
-                    <?= in_array($lang['id'], $values['languages']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($lang['name']) ?>
-                </option>
-            <?php endforeach;
-        } catch (PDOException $e) {
-            
-            error_log('Database error: ' . $e->getMessage());
-            
-           
-            echo '<option value="">Ошибка загрузки списка языков</option>';
-            
-          
-            $fallbackLanguages = [
-                1 => 'Pascal', 2 => 'C', 3 => 'C++', 4 => 'JavaScript',
-                5 => 'PHP', 6 => 'Python', 7 => 'Java', 8 => 'Haskell',
-                9 => 'Clojure', 10 => 'Prolog', 11 => 'Scala', 12 => 'Go'
-            ];
-            
-            foreach ($fallbackLanguages as $id => $name): ?>
-                <option value="<?= $id ?>" 
-                    <?= in_array($id, $values['languages']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($name) ?>
-                </option>
-            <?php endforeach;
-        }
-        ?>
-    </select>
-    <?php if ($errors['languages']): ?>
-    <div class="error-message">Выберите хотя бы один язык</div>
-    <?php endif; ?>
-</div>
+            <div class="form-group">
+                <label for="languages">Любимые языки программирования*</label>
+                <select id="languages" name="languages[]" multiple 
+                        class="<?= $errors['languages'] ? 'error' : '' ?>">
+                    <?php
+                    try {
+                        if (isset($pdo)) {
+                            $stmt = $pdo->query("SELECT id, name FROM programming_languages");
+                            $languages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                            
+                            if (empty($languages)) {
+                                throw new PDOException("Таблица языков пуста");
+                            }
+                            
+                            foreach ($languages as $lang): ?>
+                                <option value="<?= $lang['id'] ?>" 
+                                    <?= in_array($lang['id'], $values['languages']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($lang['name']) ?>
+                                </option>
+                            <?php endforeach;
+                        } else {
+                            throw new PDOException("Нет соединения с БД");
+                        }
+                    } catch (PDOException $e) {
+                        error_log("Languages load error: " . $e->getMessage());
+                        // Fallback варианты
+                        $fallback = [
+                            1 => 'Pascal', 2 => 'C', 3 => 'C++', 4 => 'JavaScript',
+                            5 => 'PHP', 6 => 'Python', 7 => 'Java', 8 => 'Haskell',
+                            9 => 'Clojure', 10 => 'Prolog', 11 => 'Scala', 12 => 'Go'
+                        ];
+                        foreach ($fallback as $id => $name): ?>
+                            <option value="<?= $id ?>"
+                                <?= in_array($id, $values['languages']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($name) ?>
+                            </option>
+                        <?php endforeach;
+                    }
+                    ?>
                 </select>
                 <?php if ($errors['languages']): ?>
                 <div class="error-message">Выберите хотя бы один язык</div>
