@@ -13,7 +13,7 @@ $messages = array();
 
 if (isset($_GET['action']) && $_GET['action'] == 'logout') {
     session_destroy();
-    header('Location: login.php');
+    header('Location: index.php');
     exit();
 }
 
@@ -32,13 +32,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         
-       
+      
         $stmt = $pdo->prepare("SELECT id, pass_hash FROM users WHERE login = ?");
         $stmt->execute([$login]);
         $user = $stmt->fetch();
         
         if ($user && password_verify($pass, $user['pass_hash'])) {
-            
+           
             $_SESSION['login'] = $login;
             $_SESSION['uid'] = $user['id'];
             
@@ -52,9 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $messages[] = '<div class="error">Ошибка базы данных</div>';
     }
 }
-
-
 ?>
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -62,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход</title>
     <style>
-        body {
+         body {
             font-family: Arial, sans-serif;
             max-width: 400px;
             margin: 0 auto;
@@ -102,6 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         button:hover {
             background: #45a049;
         }
+        
     </style>
 </head>
 <body>
