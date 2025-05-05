@@ -1,7 +1,10 @@
 <?php
-session_start();
-ob_start();
+// Старт сессии только если она еще не активна
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
+ob_start();
 header('Content-Type: text/html; charset=UTF-8');
 
 // Конфигурация базы данных
@@ -11,7 +14,6 @@ $db_user = 'u68895';
 $db_pass = '1562324';
 
 // Инициализация переменных
-$messages = [];
 $errors = [
     'full_name' => '',
     'phone' => '',
@@ -24,6 +26,7 @@ $errors = [
 
 // Обработка GET запроса
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    // Загрузка данных из сессии или кук
     if (!empty($_SESSION['form_data'])) {
         $values = $_SESSION['form_data'];
     } else {
@@ -39,7 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         ];
     }
     
-    include('form.php');
+    // Подключаем форму
+    require 'form.php';
     exit();
 }
 
@@ -93,13 +97,12 @@ if ($validation_failed) {
     exit();
 }
 
-// Подключение к БД с обработкой ошибок
+// Подключение к БД
 try {
     $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
-    
-    // Установка режима ошибок (совместимый способ)
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, constant('PDO::ERRMODE_EXCEPTION'));
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
+    // Сохраняем анкету
     $stmt = $pdo->prepare("INSERT INTO applications (full_name, phone, email, birth_date, gender, biography, contract_agreed) 
                           VALUES (?, ?, ?, ?, ?, ?, ?)");
     $stmt->execute([
@@ -114,17 +117,19 @@ try {
     
     $app_id = $pdo->lastInsertId();
     
+    // Сохраняем языки программирования
     $stmt = $pdo->prepare("INSERT INTO application_languages (application_id, language_id) VALUES (?, ?)");
     foreach ($values['languages'] as $lang_id) {
         $stmt->execute([$app_id, (int)$lang_id]);
     }
     
+    // Генерируем учетные данные
     $_SESSION['generated_credentials'] = [
         'login' => 'user_' . substr(md5(time()), 0, 8),
         'password' => substr(md5(uniqid()), 0, 8)
     ];
     
-    // Очистка данных
+    // Очищаем куки
     foreach ($values as $key => $value) {
         setcookie($key.'_value', '', time() - 3600, '/');
     }
