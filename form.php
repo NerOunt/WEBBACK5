@@ -10,75 +10,160 @@
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
+            line-height: 1.6;
+            color: #333;
         }
+        
+        .form-container {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
+        
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-weight: bold;
+            color: #444;
         }
-        input, select, textarea {
+        
+        input[type="text"],
+        input[type="tel"],
+        input[type="email"],
+        input[type="date"],
+        input[type="password"],
+        select,
+        textarea {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
             box-sizing: border-box;
+            font-size: 16px;
         }
+        
         textarea {
             height: 100px;
+            resize: vertical;
         }
+        
         select[multiple] {
             height: 120px;
+            padding: 5px;
         }
+        
         .error {
-            border-color: red;
+            border-color: #e74c3c;
+            background-color: #fdecea;
         }
+        
         .error-message {
-            color: red;
-            font-size: 0.8em;
+            color: #e74c3c;
+            font-size: 0.85em;
             margin-top: 5px;
         }
+        
         .success {
-            color: green;
-            margin-bottom: 15px;
-            padding: 10px;
-            background: #f0fff0;
-            border: 1px solid green;
+            color: #27ae60;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: #e8f5e9;
+            border: 1px solid #27ae60;
             border-radius: 4px;
         }
+        
+        .credentials-message {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 4px;
+        }
+        
+        .credentials-message h3 {
+            margin-top: 0;
+            color: #0d47a1;
+        }
+        
+        .credentials-message .warning {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        
         .radio-group {
             display: flex;
-            gap: 15px;
+            gap: 20px;
+            margin-top: 8px;
         }
+        
         .radio-option {
             display: flex;
             align-items: center;
         }
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        
+        .radio-option input[type="radio"] {
+            margin-right: 8px;
         }
+        
         .checkbox-container {
             display: flex;
             align-items: center;
             gap: 10px;
         }
+        
         .checkbox-container input[type="checkbox"] {
             width: auto;
             margin: 0;
         }
+        
         .checkbox-container label {
             margin-bottom: 0;
             font-weight: normal;
         }
+        
         .auth-info {
             margin-bottom: 20px;
-            padding: 10px;
-            background: #f0f0f0;
+            padding: 12px;
+            background: #e3f2fd;
             border-radius: 4px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .auth-info a {
+            color: #0d47a1;
+            text-decoration: none;
+        }
+        
+        .auth-info a:hover {
+            text-decoration: underline;
+        }
+        
+        button {
+            padding: 12px 24px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #0d47a1;
+        }
+        
+        option {
+            padding: 8px;
+        }
+        
+        option:hover {
+            background-color: #e3f2fd;
         }
     </style>
 </head>
@@ -87,7 +172,7 @@
         <?php if (!empty($_SESSION['login'])): ?>
             <div class="auth-info">
                 Вы вошли как <?= htmlspecialchars($_SESSION['login']) ?> 
-                (<a href="logout.php">Выйти</a>)
+                (<a href="login.php?action=logout">Выйти</a>)
             </div>
         <?php else: ?>
             <div class="auth-info">
@@ -157,28 +242,62 @@
                                class="<?= $errors['gender'] ? 'error' : '' ?>">
                         <label for="female">Женский</label>
                     </div>
+                    <div class="radio-option">
+                        <input type="radio" id="other" name="gender" value="other" 
+                               <?= $values['gender'] === 'other' ? 'checked' : '' ?>
+                               class="<?= $errors['gender'] ? 'error' : '' ?>">
+                        <label for="other">Другой</label>
+                    </div>
                 </div>
                 <?php if ($errors['gender']): ?>
                 <div class="error-message">Укажите пол</div>
                 <?php endif; ?>
             </div>
 
-            <div class="form-group">
-                <label for="languages">Любимые языки программирования*</label>
-                <select id="languages" name="languages[]" multiple 
-                        class="<?= $errors['languages'] ? 'error' : '' ?>">
-                    <?php
-                    $allLanguages = [
-                        1 => 'Pascal', 2 => 'C', 3 => 'C++', 4 => 'JavaScript',
-                        5 => 'PHP', 6 => 'Python', 7 => 'Java', 8 => 'Haskell',
-                        9 => 'Clojure', 10 => 'Prolog', 11 => 'Scala', 12 => 'Go'
-                    ];
-                    foreach ($allLanguages as $id => $name): ?>
-                        <option value="<?= $id ?>" 
-                            <?= in_array($id, $values['languages']) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($name) ?>
-                        </option>
-                    <?php endforeach; ?>
+           <div class="form-group">
+    <label for="languages">Любимые языки программирования*</label>
+    <select id="languages" name="languages[]" multiple 
+            class="<?= $errors['languages'] ? 'error' : '' ?>">
+        <?php
+        try {
+            $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $stmt = $pdo->query("SELECT id, name FROM programming_languages");
+            $languages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            foreach ($languages as $lang): ?>
+                <option value="<?= $lang['id'] ?>" 
+                    <?= in_array($lang['id'], $values['languages']) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($lang['name']) ?>
+                </option>
+            <?php endforeach;
+        } catch (PDOException $e) {
+            
+            error_log('Database error: ' . $e->getMessage());
+            
+           
+            echo '<option value="">Ошибка загрузки списка языков</option>';
+            
+          
+            $fallbackLanguages = [
+                1 => 'Pascal', 2 => 'C', 3 => 'C++', 4 => 'JavaScript',
+                5 => 'PHP', 6 => 'Python', 7 => 'Java', 8 => 'Haskell',
+                9 => 'Clojure', 10 => 'Prolog', 11 => 'Scala', 12 => 'Go'
+            ];
+            
+            foreach ($fallbackLanguages as $id => $name): ?>
+                <option value="<?= $id ?>" 
+                    <?= in_array($id, $values['languages']) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($name) ?>
+                </option>
+            <?php endforeach;
+        }
+        ?>
+    </select>
+    <?php if ($errors['languages']): ?>
+    <div class="error-message">Выберите хотя бы один язык</div>
+    <?php endif; ?>
+</div>
                 </select>
                 <?php if ($errors['languages']): ?>
                 <div class="error-message">Выберите хотя бы один язык</div>
