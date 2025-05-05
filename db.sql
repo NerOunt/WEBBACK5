@@ -24,7 +24,7 @@ CREATE TABLE application_languages (
     PRIMARY KEY (application_id, language_id)
 );
 
--- Заполнение таблицы языков
+
 INSERT INTO programming_languages (name) VALUES 
 ('Pascal'), ('C'), ('C++'), ('JavaScript'), ('PHP'), ('Python'),
 ('Java'), ('Haskell'), ('Clojure'), ('Prolog'), ('Scala'), ('Go');
