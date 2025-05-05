@@ -1,5 +1,4 @@
 <?php
-// Старт сессии только если она еще не активна
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -7,97 +6,99 @@ if (session_status() === PHP_SESSION_NONE) {
 ob_start();
 header('Content-Type: text/html; charset=UTF-8');
 
-// Конфигурация базы данных
 $db_host = 'localhost';
 $db_name = 'u68895';
 $db_user = 'u68895';
 $db_pass = '1562324';
 
-// Инициализация переменных
-$errors = [
+// Инициализация
+$errors = [];
+$values = [
     'full_name' => '',
     'phone' => '',
     'email' => '',
     'birth_date' => '',
     'gender' => '',
-    'languages' => '',
-    'contract_agreed' => ''
+    'biography' => '',
+    'contract_agreed' => false,
+    'languages' => []
 ];
 
 // Обработка GET запроса
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    // Загрузка данных из сессии или кук
-    if (!empty($_SESSION['form_data'])) {
-        $values = $_SESSION['form_data'];
-    } else {
-        $values = [
-            'full_name' => $_COOKIE['full_name_value'] ?? '',
-            'phone' => $_COOKIE['phone_value'] ?? '',
-            'email' => $_COOKIE['email_value'] ?? '',
-            'birth_date' => $_COOKIE['birth_date_value'] ?? '',
-            'gender' => $_COOKIE['gender_value'] ?? '',
-            'biography' => $_COOKIE['biography_value'] ?? '',
-            'contract_agreed' => isset($_COOKIE['contract_agreed_value']) ? (bool)$_COOKIE['contract_agreed_value'] : false,
-            'languages' => isset($_COOKIE['languages_value']) ? explode(',', $_COOKIE['languages_value']) : []
-        ];
+    // Загрузка данных из кук
+    foreach ($values as $key => &$value) {
+        if (isset($_COOKIE[$key.'_value'])) {
+            $value = $key === 'contract_agreed' 
+                ? (bool)$_COOKIE[$key.'_value']
+                : $_COOKIE[$key.'_value'];
+        }
     }
     
-    // Подключаем форму
-    require 'form.php';
+    if (isset($_COOKIE['languages_value'])) {
+        $values['languages'] = explode(',', $_COOKIE['languages_value']);
+    }
+    
+    include('form.php');
     exit();
 }
 
 // Обработка POST запроса
 $values = $_POST;
-$_SESSION['form_data'] = $values;
+$values['languages'] = $_POST['languages'] ?? [];
+$values['contract_agreed'] = isset($_POST['contract_agreed']);
 
-// Валидация данных
+// Валидация
 $validation_failed = false;
 
 if (empty($values['full_name']) || !preg_match('/^[а-яА-ЯёЁa-zA-Z\s\-]{2,150}$/u', $values['full_name'])) {
-    $errors['full_name'] = 'Введите корректное ФИО';
+    $errors['full_name'] = true;
     $validation_failed = true;
 }
 
 if (empty($values['phone']) || !preg_match('/^\+?\d{10,15}$/', $values['phone'])) {
-    $errors['phone'] = 'Введите корректный телефон';
+    $errors['phone'] = true;
     $validation_failed = true;
 }
 
 if (empty($values['email']) || !filter_var($values['email'], FILTER_VALIDATE_EMAIL)) {
-    $errors['email'] = 'Введите корректный email';
+    $errors['email'] = true;
     $validation_failed = true;
 }
 
 $today = new DateTime();
 $birthdate = DateTime::createFromFormat('Y-m-d', $values['birth_date']);
 if (empty($values['birth_date']) || !$birthdate || $birthdate > $today) {
-    $errors['birth_date'] = 'Введите корректную дату рождения';
+    $errors['birth_date'] = true;
     $validation_failed = true;
 }
 
 if (empty($values['gender']) || !in_array($values['gender'], ['male', 'female', 'other'])) {
-    $errors['gender'] = 'Выберите пол';
+    $errors['gender'] = true;
     $validation_failed = true;
 }
 
 if (empty($values['languages'])) {
-    $errors['languages'] = 'Выберите хотя бы один язык';
+    $errors['languages'] = true;
     $validation_failed = true;
 }
 
-if (empty($values['contract_agreed'])) {
-    $errors['contract_agreed'] = 'Необходимо согласие с контрактом';
+if (!$values['contract_agreed']) {
+    $errors['contract_agreed'] = true;
     $validation_failed = true;
 }
 
 if ($validation_failed) {
+    // Сохраняем введенные значения в куки
+    foreach ($values as $key => $value) {
+        setcookie($key.'_value', is_array($value) ? implode(',', $value) : $value, time() + 3600, '/');
+    }
+    
     $_SESSION['errors'] = $errors;
     header('Location: index.php');
     exit();
 }
 
-// Подключение к БД
 try {
     $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -112,7 +113,7 @@ try {
         $values['birth_date'],
         $values['gender'],
         $values['biography'],
-        isset($values['contract_agreed']) ? 1 : 0
+        $values['contract_agreed'] ? 1 : 0
     ]);
     
     $app_id = $pdo->lastInsertId();
@@ -120,32 +121,31 @@ try {
     // Сохраняем языки программирования
     $stmt = $pdo->prepare("INSERT INTO application_languages (application_id, language_id) VALUES (?, ?)");
     foreach ($values['languages'] as $lang_id) {
-        $stmt->execute([$app_id, (int)$lang_id]);
+        $stmt->execute([$app_id, $lang_id]);
     }
     
-    // Генерируем учетные данные
+    // Генерируем и сохраняем учетные данные
+    $login = 'user_' . substr(md5(time()), 0, 8);
+    $password = substr(md5(uniqid()), 0, 8);
+    $password_hash = password_hash($password, PASSWORD_DEFAULT);
+    
+    $stmt = $pdo->prepare("INSERT INTO users (login, password, application_id) VALUES (?, ?, ?)");
+    $stmt->execute([$login, $password_hash, $app_id]);
+    
     $_SESSION['generated_credentials'] = [
-        'login' => 'user_' . substr(md5(time()), 0, 8),
-        'password' => substr(md5(uniqid()), 0, 8)
+        'login' => $login,
+        'password' => $password
     ];
     
     // Очищаем куки
     foreach ($values as $key => $value) {
         setcookie($key.'_value', '', time() - 3600, '/');
     }
-    setcookie('languages_value', '', time() - 3600, '/');
-    setcookie('contract_agreed_value', '', time() - 3600, '/');
-    
-    unset($_SESSION['form_data']);
-    unset($_SESSION['errors']);
     
     header("Location: index.php");
     exit();
     
 } catch (PDOException $e) {
-    $_SESSION['error_message'] = "Ошибка базы данных. Пожалуйста, попробуйте позже.";
-    error_log("DB Error: " . $e->getMessage());
-    header("Location: index.php");
-    exit();
+    die("Ошибка базы данных: " . $e->getMessage());
 }
 ?>
