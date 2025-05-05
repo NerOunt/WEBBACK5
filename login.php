@@ -1,15 +1,8 @@
 <?php
 session_start();
 
-header('Content-Type: text/html; charset=UTF-8');
-
-$db_host = 'localhost';
-$db_name = 'u68895';
-$db_user = 'u68895';
-$db_pass = '1562324';
-
 // Выход из системы
-if (isset($_GET['action']) && $_GET['action'] == 'logout') {
+if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     session_destroy();
     header('Location: index.php');
     exit();
@@ -21,63 +14,113 @@ if (!empty($_SESSION['login'])) {
     exit();
 }
 
-// Обработка входа
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+// Обработка формы входа
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $login = $_POST['login'] ?? '';
     $password = $_POST['password'] ?? '';
     
-    try {
-        $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        
-        $stmt = $pdo->prepare("SELECT id, pass_hash FROM users WHERE login = ?");
-        $stmt->execute([$login]);
-        $user = $stmt->fetch();
-        
-        if ($user && password_verify($password, $user['pass_hash'])) {
-            $_SESSION['login'] = $login;
-            $_SESSION['uid'] = $user['id'];
-            header('Location: index.php');
-            exit();
-        } else {
-            $error = "Неверный логин или пароль";
-        }
-    } catch (PDOException $e) {
-        $error = "Ошибка базы данных";
+    // Простая проверка (в реальной системе нужно проверять в БД)
+    if ($login === 'admin' && $password === '12345') {
+        $_SESSION['login'] = $login;
+        header('Location: index.php');
+        exit();
+    } else {
+        $_SESSION['error_message'] = 'Неверный логин или пароль';
+        header('Location: login.php');
+        exit();
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Вход</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в систему</title>
     <style>
-        /* Стили аналогичные form.php */
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .login-container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        button {
+            padding: 10px 15px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .error-message {
+            color: #f44336;
+            margin-bottom: 15px;
+        }
+        
+        .register-link {
+            margin-top: 15px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <h1>Вход</h1>
-    
-    <?php if (!empty($error)): ?>
-        <div class="error-message"><?= $error ?></div>
-    <?php endif; ?>
-    
-    <form method="POST">
-        <div class="form-group">
-            <label for="login">Логин</label>
-            <input type="text" id="login" name="login" required>
-        </div>
+    <div class="login-container">
+        <h1>Вход в систему</h1>
         
-        <div class="form-group">
-            <label for="password">Пароль</label>
-            <input type="password" id="password" name="password" required>
-        </div>
+        <?php if (!empty($_SESSION['error_message'])): ?>
+            <div class="error-message">
+                <?= htmlspecialchars($_SESSION['error_message']) ?>
+            </div>
+            <?php unset($_SESSION['error_message']); ?>
+        <?php endif; ?>
         
-        <button type="submit">Войти</button>
-    </form>
-    
-    <p>Ещё нет аккаунта? <a href="index.php">Заполните анкету</a></p>
+        <form method="POST">
+            <div class="form-group">
+                <label for="login">Логин</label>
+                <input type="text" id="login" name="login" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit">Войти</button>
+        </form>
+        
+        <div class="register-link">
+            <p>Ещё нет аккаунта? <a href="index.php">Зарегистрируйтесь</a></p>
+        </div>
+    </div>
 </body>
 </html>
