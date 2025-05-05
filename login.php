@@ -1,6 +1,10 @@
 <?php
-session_start();
+// Старт сессии только если она еще не активна
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
+// Выход из системы
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     session_unset();
     session_destroy();
@@ -8,18 +12,21 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     exit();
 }
 
+// Перенаправление если уже авторизован
 if (!empty($_SESSION['login'])) {
     header('Location: index.php');
     exit();
 }
 
+// Обработка формы входа
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $login = trim($_POST['login'] ?? '');
     $password = trim($_POST['password'] ?? '');
     
-    // Простая проверка (в реальной системе - проверка в БД)
+    // В реальной системе здесь должна быть проверка в БД
     if ($login === 'admin' && $password === '12345') {
         $_SESSION['login'] = $login;
+        $_SESSION['last_activity'] = time();
         header('Location: index.php');
         exit();
     } else {
@@ -28,16 +35,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 }
+
+header('Content-Type: text/html; charset=UTF-8');
 ?>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход в систему</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px; }
-        .login-container { background: white; padding: 25px; border-radius: 8px; }
-        .error-message { color: #f44336; margin-bottom: 15px; }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .login-container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .error-message {
+            color: #f44336;
+            margin-bottom: 15px;
+        }
+        .register-link {
+            margin-top: 15px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -52,16 +105,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         
         <form method="POST">
-            <div>
-                <label>Логин</label>
-                <input type="text" name="login" required>
+            <div class="form-group">
+                <label for="login">Логин</label>
+                <input type="text" id="login" name="login" required>
             </div>
-            <div>
-                <label>Пароль</label>
-                <input type="password" name="password" required>
+            
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" required>
             </div>
+            
             <button type="submit">Войти</button>
         </form>
+        
+        <div class="register-link">
+            <p>Ещё нет аккаунта? <a href="index.php">Зарегистрируйтесь</a></p>
+        </div>
     </div>
 </body>
 </html>
