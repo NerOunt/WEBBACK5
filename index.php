@@ -11,7 +11,7 @@ $db_name = 'u68895';
 $db_user = 'u68895';
 $db_pass = '1562324';
 
-// Инициализация
+
 $errors = [];
 $values = [
     'full_name' => '',
@@ -24,9 +24,9 @@ $values = [
     'languages' => []
 ];
 
-// Обработка GET запроса
+
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    // Загрузка данных из кук
+   
     foreach ($values as $key => &$value) {
         if (isset($_COOKIE[$key.'_value'])) {
             $value = $key === 'contract_agreed' 
@@ -43,12 +43,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     exit();
 }
 
-// Обработка POST запроса
+
 $values = $_POST;
 $values['languages'] = $_POST['languages'] ?? [];
 $values['contract_agreed'] = isset($_POST['contract_agreed']);
 
-// Валидация
+
 $validation_failed = false;
 
 if (empty($values['full_name']) || !preg_match('/^[а-яА-ЯёЁa-zA-Z\s\-]{2,150}$/u', $values['full_name'])) {
@@ -89,7 +89,7 @@ if (!$values['contract_agreed']) {
 }
 
 if ($validation_failed) {
-    // Сохраняем введенные значения в куки
+    
     foreach ($values as $key => $value) {
         setcookie($key.'_value', is_array($value) ? implode(',', $value) : $value, time() + 3600, '/');
     }
@@ -103,7 +103,7 @@ try {
     $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Сохраняем анкету
+ 
     $stmt = $pdo->prepare("INSERT INTO applications (full_name, phone, email, birth_date, gender, biography, contract_agreed) 
                           VALUES (?, ?, ?, ?, ?, ?, ?)");
     $stmt->execute([
@@ -118,13 +118,13 @@ try {
     
     $app_id = $pdo->lastInsertId();
     
-    // Сохраняем языки программирования
+  
     $stmt = $pdo->prepare("INSERT INTO application_languages (application_id, language_id) VALUES (?, ?)");
     foreach ($values['languages'] as $lang_id) {
         $stmt->execute([$app_id, $lang_id]);
     }
     
-    // Генерируем и сохраняем учетные данные
+   
     $login = 'user_' . substr(md5(time()), 0, 8);
     $password = substr(md5(uniqid()), 0, 8);
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
@@ -137,7 +137,7 @@ try {
         'password' => $password
     ];
     
-    // Очищаем куки
+   
     foreach ($values as $key => $value) {
         setcookie($key.'_value', '', time() - 3600, '/');
     }
