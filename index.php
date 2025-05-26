@@ -177,11 +177,10 @@ try {
             $stmt = $pdo->prepare("INSERT INTO users (login, password, application_id) VALUES (?, ?, ?)");
             $stmt->execute([$login, $password_hash, $app_id]);
             
-            $_SESSION['login'] = $login;
-            $_SESSION['user_id'] = $pdo->lastInsertId();
             $_SESSION['generated_credentials'] = [
                 'login' => $login,
-                'password' => $password
+                'password' => $password,
+                'application_id' => $app_id
             ];
         }
     }
