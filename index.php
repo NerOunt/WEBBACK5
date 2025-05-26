@@ -22,7 +22,7 @@ $values = [
     'languages' => []
 ];
 
-// Загрузка данных пользователя если он авторизован
+
 if (!empty($_SESSION['user_id'])) {
     try {
         $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
@@ -54,7 +54,7 @@ if (!empty($_SESSION['user_id'])) {
             $_SESSION['form_data'] = $values;
         }
     } catch (PDOException $e) {
-        // Ошибка загрузки - продолжим с пустой формой
+       
     }
 }
 
@@ -63,12 +63,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     exit();
 }
 
-// Обработка POST-запроса
+
 $values = $_POST;
 $values['languages'] = $_POST['languages'] ?? [];
 $values['contract_agreed'] = isset($_POST['contract_agreed']);
 
-// Валидация
+
 $validation_failed = false;
 
 if (empty($values['full_name']) || !preg_match('/^[а-яА-ЯёЁa-zA-Z\s\-]{2,150}$/u', $values['full_name'])) {
@@ -120,7 +120,7 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     if (!empty($_SESSION['user_id']) && isset($_POST['update'])) {
-        // Режим обновления данных
+       
         $stmt = $pdo->prepare("UPDATE applications SET 
                               full_name = ?, phone = ?, email = ?, 
                               birth_date = ?, gender = ?, biography = ?, 
@@ -149,7 +149,7 @@ try {
         
         $_SESSION['update_success'] = true;
     } else {
-        // Режим создания новой анкеты
+       
         $stmt = $pdo->prepare("INSERT INTO applications (full_name, phone, email, birth_date, gender, biography, contract_agreed) 
                               VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
