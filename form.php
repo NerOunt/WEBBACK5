@@ -6,7 +6,6 @@ $errors = $_SESSION['errors'] ?? [];
 $generated_credentials = $_SESSION['generated_credentials'] ?? null;
 $login = $_SESSION['login'] ?? null;
 
-// Загрузка списка языков программирования
 try {
     $db_host = 'localhost';
     $db_name = 'u68895';
@@ -27,7 +26,7 @@ $is_edit_mode = !empty($login);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $is_edit_mode ? 'Редактирование анкеты' : 'Анкета' ?></title>
+    <title>Анкета</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -59,7 +58,7 @@ $is_edit_mode = !empty($login);
             color: red;
             font-size: 0.8em;
         }
-        .credentials-info {
+        .credentials {
             background: #f0f8ff;
             padding: 15px;
             margin-bottom: 20px;
@@ -73,12 +72,16 @@ $is_edit_mode = !empty($login);
             border: 1px solid #a0d8a0;
             border-radius: 4px;
         }
-        .login-prompt {
-            background: #fffacd;
-            padding: 15px;
+        .form-group {
             margin-bottom: 20px;
-            border-radius: 5px;
-            border: 1px solid #e6db55;
+        }
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .input-group {
+            margin-top: 5px;
         }
         .input-option {
             display: flex;
@@ -88,7 +91,14 @@ $is_edit_mode = !empty($login);
         .input-option input[type="radio"],
         .input-option input[type="checkbox"] {
             width: auto;
-            margin-right: 10px;
+            margin: 0 10px 0 0;
+            transform: scale(1.2);
+        }
+        .option-label {
+            font-weight: normal;
+            cursor: pointer;
+            user-select: none;
+            margin-bottom: 0;
         }
     </style>
 </head>
@@ -104,11 +114,11 @@ $is_edit_mode = !empty($login);
         <?php unset($_SESSION['update_success']); ?>
     <?php endif; ?>
 
-    <?php if (!empty($generated_credentials) && empty($login)): ?>
-        <div class="login-prompt">
-            <h3>Анкета успешно сохранена!</h3>
-            <p>Для просмотра и редактирования анкеты войдите в систему, используя предоставленные учетные данные.</p>
-            <p><a href="login.php" class="login-link">Перейти к странице входа</a></p>
+    <?php if (!empty($generated_credentials)): ?>
+        <div class="credentials">
+            <h3>Ваши данные для входа:</h3>
+            <p><strong>Логин:</strong> <?= htmlspecialchars($generated_credentials['login']) ?></p>
+            <p><strong>Пароль:</strong> <?= htmlspecialchars($generated_credentials['password']) ?></p>
         </div>
     <?php endif; ?>
 
@@ -209,12 +219,11 @@ $is_edit_mode = !empty($login);
                 <div class="error-message">Необходимо согласие</div>
             <?php endif; ?>
         </div>
-        <div class="form-group">
-            <button type="submit"><?= $is_edit_mode ? 'Обновить данные' : 'Отправить' ?></button>
-        </div>
+
+        <button type="submit"><?= $is_edit_mode ? 'Обновить данные' : 'Отправить' ?></button>
     </form>
 </body>
 </html>
 <?php
-unset($_SESSION['errors'], $_SESSION['form_data']);
+unset($_SESSION['errors'], $_SESSION['generated_credentials'], $_SESSION['form_data']);
 ?>
