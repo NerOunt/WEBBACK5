@@ -8,7 +8,6 @@ $db_name = 'u68895';
 $db_user = 'u68895';
 $db_pass = '1562324';
 
-
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     session_unset();
     session_destroy();
@@ -16,12 +15,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     exit();
 }
 
-
 if (!empty($_SESSION['login'])) {
     header('Location: index.php');
     exit();
 }
-
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $login = trim($_POST['login'] ?? '');
