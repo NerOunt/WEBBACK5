@@ -35,6 +35,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user && password_verify($password, $user['password'])) {
             $_SESSION['login'] = $user['login'];
             $_SESSION['user_id'] = $user['id'];
+            
+            // Если это вход с сгенерированными данными, очищаем их
+            if (isset($_SESSION['generated_credentials'])) {
+                unset($_SESSION['generated_credentials']);
+            }
+            
             header('Location: index.php');
             exit();
         } else {
@@ -94,6 +100,12 @@ header('Content-Type: text/html; charset=UTF-8');
             color: red;
             margin-bottom: 15px;
         }
+        .credentials {
+            background: #f0f8ff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -105,15 +117,27 @@ header('Content-Type: text/html; charset=UTF-8');
             <?php unset($_SESSION['error_message']); ?>
         <?php endif; ?>
         
+        <?php if (!empty($_SESSION['generated_credentials'])): ?>
+            <div class="credentials">
+                <h3>Ваши данные для входа:</h3>
+                <p><strong>Логин:</strong> <?= htmlspecialchars($_SESSION['generated_credentials']['login']) ?></p>
+                <p><strong>Пароль:</strong> <?= htmlspecialchars($_SESSION['generated_credentials']['password']) ?></p>
+            </div>
+        <?php endif; ?>
+        
         <form method="POST">
             <div class="form-group">
                 <label>Логин:</label>
-                <input type="text" name="login" required>
+                <input type="text" name="login" 
+                       value="<?= !empty($_SESSION['generated_credentials']) ? htmlspecialchars($_SESSION['generated_credentials']['login']) : '' ?>" 
+                       required>
             </div>
             
             <div class="form-group">
                 <label>Пароль:</label>
-                <input type="password" name="password" required>
+                <input type="password" name="password" 
+                       value="<?= !empty($_SESSION['generated_credentials']) ? htmlspecialchars($_SESSION['generated_credentials']['password']) : '' ?>" 
+                       required>
             </div>
             
             <button type="submit">Войти</button>
