@@ -6,6 +6,7 @@ $errors = $_SESSION['errors'] ?? [];
 $generated_credentials = $_SESSION['generated_credentials'] ?? null;
 $login = $_SESSION['login'] ?? null;
 
+// Загрузка списка языков программирования
 try {
     $db_host = 'localhost';
     $db_name = 'u68895';
@@ -26,7 +27,7 @@ $is_edit_mode = !empty($login);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Анкета</title>
+    <title><?= $is_edit_mode ? 'Редактирование анкеты' : 'Анкета' ?></title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -58,7 +59,7 @@ $is_edit_mode = !empty($login);
             color: red;
             font-size: 0.8em;
         }
-        .credentials {
+        .credentials-info {
             background: #f0f8ff;
             padding: 15px;
             margin-bottom: 20px;
@@ -72,16 +73,12 @@ $is_edit_mode = !empty($login);
             border: 1px solid #a0d8a0;
             border-radius: 4px;
         }
-        .form-group {
+        .login-prompt {
+            background: #fffacd;
+            padding: 15px;
             margin-bottom: 20px;
-        }
-        .input-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-        .input-group {
-            margin-top: 5px;
+            border-radius: 5px;
+            border: 1px solid #e6db55;
         }
         .input-option {
             display: flex;
@@ -91,21 +88,7 @@ $is_edit_mode = !empty($login);
         .input-option input[type="radio"],
         .input-option input[type="checkbox"] {
             width: auto;
-            margin: 0 10px 0 0;
-            transform: scale(1.2);
-        }
-        .option-label {
-            font-weight: normal;
-            cursor: pointer;
-            user-select: none;
-            margin-bottom: 0;
-        }
-        .login-prompt {
-            background: #fffacd;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            border: 1px solid #e6db55;
+            margin-right: 10px;
         }
     </style>
 </head>
@@ -123,9 +106,9 @@ $is_edit_mode = !empty($login);
 
     <?php if (!empty($generated_credentials) && empty($login)): ?>
         <div class="login-prompt">
-            <h3>Ваша анкета успешно сохранена!</h3>
-            <p>Для доступа к вашим данным используйте сгенерированные учетные данные.</p>
-            <p><a href="login.php">Перейти на страницу входа</a></p>
+            <h3>Анкета успешно сохранена!</h3>
+            <p>Для просмотра и редактирования анкеты войдите в систему, используя предоставленные учетные данные.</p>
+            <p><a href="login.php" class="login-link">Перейти к странице входа</a></p>
         </div>
     <?php endif; ?>
 
@@ -144,7 +127,7 @@ $is_edit_mode = !empty($login);
             <?php endif; ?>
         </div>
 
-  <div class="form-group">
+        <div class="form-group">
             <label for="phone">Телефон*</label>
             <input type="tel" id="phone" name="phone" 
                    value="<?= htmlspecialchars($values['phone'] ?? '') ?>"
@@ -226,11 +209,12 @@ $is_edit_mode = !empty($login);
                 <div class="error-message">Необходимо согласие</div>
             <?php endif; ?>
         </div>
-
-        <button type="submit"><?= $is_edit_mode ? 'Обновить данные' : 'Отправить' ?></button>
+        <div class="form-group">
+            <button type="submit"><?= $is_edit_mode ? 'Обновить данные' : 'Отправить' ?></button>
+        </div>
     </form>
 </body>
 </html>
 <?php
-unset($_SESSION['errors'], $_SESSION['generated_credentials'], $_SESSION['form_data']);
+unset($_SESSION['errors'], $_SESSION['form_data']);
 ?>
