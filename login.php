@@ -1,13 +1,12 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+session_start();
 
 $db_host = 'localhost';
 $db_name = 'u68895';
 $db_user = 'u68895';
 $db_pass = '1562324';
 
+// Выход из системы
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     session_unset();
     session_destroy();
@@ -15,19 +14,20 @@ if (isset($_GET['action']) && $_GET['action'] === 'logout') {
     exit();
 }
 
+// Если уже авторизован - редирект на главную
 if (!empty($_SESSION['login'])) {
     header('Location: index.php');
     exit();
 }
 
+// Обработка формы входа
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $login = trim($_POST['login'] ?? '');
     $password = trim($_POST['password'] ?? '');
     
     try {
         $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+        
         $stmt = $pdo->prepare("SELECT * FROM users WHERE login = ?");
         $stmt->execute([$login]);
         $user = $stmt->fetch();
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['login'] = $user['login'];
             $_SESSION['user_id'] = $user['id'];
             
-            // Если это вход с сгенерированными данными, очищаем их
+            // Удаляем сгенерированные учетные данные после успешного входа
             if (isset($_SESSION['generated_credentials'])) {
                 unset($_SESSION['generated_credentials']);
             }
@@ -55,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Отображение формы входа
 header('Content-Type: text/html; charset=UTF-8');
 ?>
 <!DOCTYPE html>
@@ -122,6 +123,7 @@ header('Content-Type: text/html; charset=UTF-8');
                 <h3>Ваши данные для входа:</h3>
                 <p><strong>Логин:</strong> <?= htmlspecialchars($_SESSION['generated_credentials']['login']) ?></p>
                 <p><strong>Пароль:</strong> <?= htmlspecialchars($_SESSION['generated_credentials']['password']) ?></p>
+                <p>Используйте эти данные для входа в систему</p>
             </div>
         <?php endif; ?>
         
