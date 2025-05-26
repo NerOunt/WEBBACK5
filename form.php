@@ -1,12 +1,10 @@
 <?php
-
 header('Content-Type: text/html; charset=UTF-8');
 
 $values = $_SESSION['form_data'] ?? [];
 $errors = $_SESSION['errors'] ?? [];
 $generated_credentials = $_SESSION['generated_credentials'] ?? null;
 $login = $_SESSION['login'] ?? null;
-
 
 try {
     $db_host = 'localhost';
@@ -20,6 +18,8 @@ try {
 } catch (PDOException $e) {
     $languages = [];
 }
+
+$is_edit_mode = !empty($login);
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -64,40 +64,42 @@ try {
             margin-bottom: 20px;
             border-radius: 5px;
         }
+        .success-message {
+            color: green;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f0fff0;
+            border: 1px solid #a0d8a0;
+            border-radius: 4px;
+        }
         .form-group {
-    margin-bottom: 20px;
-}
-
-.input-label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: bold;
-}
-
-.input-group {
-    margin-top: 5px;
-}
-
-.input-option {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.input-option input[type="radio"],
-.input-option input[type="checkbox"] {
-    width: auto;
-    margin: 0 10px 0 0;
-    transform: scale(1.2);
-}
-
-.option-label {
-    font-weight: normal;
-    cursor: pointer;
-    user-select: none;
-    margin-bottom: 0;
-}
-       
+            margin-bottom: 20px;
+        }
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .input-group {
+            margin-top: 5px;
+        }
+        .input-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .input-option input[type="radio"],
+        .input-option input[type="checkbox"] {
+            width: auto;
+            margin: 0 10px 0 0;
+            transform: scale(1.2);
+        }
+        .option-label {
+            font-weight: normal;
+            cursor: pointer;
+            user-select: none;
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -105,6 +107,11 @@ try {
         <p>Вы вошли как: <?= htmlspecialchars($login) ?> (<a href="login.php?action=logout">Выйти</a>)</p>
     <?php else: ?>
         <p><a href="login.php">Войти</a></p>
+    <?php endif; ?>
+
+    <?php if (!empty($_SESSION['update_success'])): ?>
+        <div class="success-message">Данные успешно обновлены!</div>
+        <?php unset($_SESSION['update_success']); ?>
     <?php endif; ?>
 
     <?php if (!empty($generated_credentials)): ?>
@@ -116,6 +123,10 @@ try {
     <?php endif; ?>
 
     <form method="POST" action="index.php">
+        <?php if ($is_edit_mode): ?>
+            <input type="hidden" name="update" value="1">
+        <?php endif; ?>
+
         <div class="form-group">
             <label for="full_name">ФИО*</label>
             <input type="text" id="full_name" name="full_name" 
@@ -156,24 +167,25 @@ try {
             <?php endif; ?>
         </div>
 
-     <div class="form-group">
-    <label class="input-label">Пол*</label>
-    <div class="input-group">
-        <div class="input-option">
-            <input type="radio" id="gender_male" name="gender" value="male"
-                <?= ($values['gender'] ?? '') === 'male' ? 'checked' : '' ?> required>
-            <label for="gender_male" class="option-label">Мужской</label>
+        <div class="form-group">
+            <label class="input-label">Пол*</label>
+            <div class="input-group">
+                <div class="input-option">
+                    <input type="radio" id="gender_male" name="gender" value="male"
+                        <?= ($values['gender'] ?? '') === 'male' ? 'checked' : '' ?> required>
+                    <label for="gender_male" class="option-label">Мужской</label>
+                </div>
+                <div class="input-option">
+                    <input type="radio" id="gender_female" name="gender" value="female"
+                        <?= ($values['gender'] ?? '') === 'female' ? 'checked' : '' ?>>
+                    <label for="gender_female" class="option-label">Женский</label>
+                </div>
+            </div>
+            <?php if (!empty($errors['gender'])): ?>
+                <div class="error-message">Выберите пол</div>
+            <?php endif; ?>
         </div>
-        <div class="input-option">
-            <input type="radio" id="gender_female" name="gender" value="female"
-                <?= ($values['gender'] ?? '') === 'female' ? 'checked' : '' ?>>
-            <label for="gender_female" class="option-label">Женский</label>
-        </div>
-    </div>
-    <?php if (!empty($errors['gender'])): ?>
-        <div class="error-message">Выберите пол</div>
-    <?php endif; ?>
-</div>
+
         <div class="form-group">
             <label for="languages">Языки программирования*</label>
             <select id="languages" name="languages[]" multiple 
@@ -194,24 +206,24 @@ try {
             <label for="biography">Биография</label>
             <textarea id="biography" name="biography"><?= htmlspecialchars($values['biography'] ?? '') ?></textarea>
         </div>
-<div class="form-group">
-    <div class="input-group">
-        <div class="input-option">
-            <input type="checkbox" id="contract_agreed" name="contract_agreed"
-                <?= ($values['contract_agreed'] ?? false) ? 'checked' : '' ?> required>
-            <label for="contract_agreed" class="option-label">С контрактом ознакомлпен*</label>
-        </div>
-    </div>
-    <?php if (!empty($errors['contract_agreed'])): ?>
-        <div class="error-message">Необходимо согласие</div>
-    <?php endif; ?>
-</div>
 
-        <button type="submit">Отправить</button>
+        <div class="form-group">
+            <div class="input-group">
+                <div class="input-option">
+                    <input type="checkbox" id="contract_agreed" name="contract_agreed"
+                        <?= ($values['contract_agreed'] ?? false) ? 'checked' : '' ?> required>
+                    <label for="contract_agreed" class="option-label">С контрактом ознакомлен*</label>
+                </div>
+            </div>
+            <?php if (!empty($errors['contract_agreed'])): ?>
+                <div class="error-message">Необходимо согласие</div>
+            <?php endif; ?>
+        </div>
+
+        <button type="submit"><?= $is_edit_mode ? 'Обновить данные' : 'Отправить' ?></button>
     </form>
 </body>
 </html>
 <?php
-
-unset($_SESSION['errors'], $_SESSION['generated_credentials']);
+unset($_SESSION['errors'], $_SESSION['generated_credentials'], $_SESSION['form_data']);
 ?>
